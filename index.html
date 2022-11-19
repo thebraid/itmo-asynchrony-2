@@ -8,16 +8,411 @@
 
 		<link rel="stylesheet" href="dist/reset.css">
 		<link rel="stylesheet" href="dist/reveal.css">
-		<link rel="stylesheet" href="dist/theme/black.css">
+		<link rel="stylesheet" href="dist/theme/white.css">
+		<link rel="stylesheet" href="css/custom.css">
 
 		<!-- Theme used for syntax highlighted code -->
-		<link rel="stylesheet" href="plugin/highlight/monokai.css">
+		<link rel="stylesheet" href="plugin/highlight/equilibrium-light.css">
 	</head>
-	<body>
+	<body class="background">
 		<div class="reveal">
 			<div class="slides">
-				<section>Slide 1</section>
-				<section>Slide 2</section>
+				<section>
+					<h3>Асинхронность</h3>
+					<p>Часть 2</p>
+					<br>
+					<p><span style="color:red">А</span>лексей Клестер</p>
+				</section>
+				<section>
+					<section>
+						<h6>В предыдущих сериях</h6>
+					</section>
+					<section>
+						<p>Стек вызовов</p>
+						<p class="fragment">Очередь событий</p>
+						<p class="fragment">Event Loop</p>
+					</section>
+					<section>
+						<div class="book-quote">
+							<img width="250" src="assets/cover.jpeg">
+							<q cite="https://github.com/azat-io/you-dont-know-js-ru/blob/master/async%20%26%20performance/ch1.md#event-loop">В любой момент времени из очереди может быть обработано только одно событие</q>
+						</div>
+					</section>
+					<section>
+						<div class="book-quote">
+							<img width="250" src="assets/cover.jpeg">
+							<q cite="https://github.com/azat-io/you-dont-know-js-ru/blob/master/async%20%26%20performance/ch1.md#event-loop">Параллелизм — это когда две или более цепочек событий чередуются во времени, так что с точки зрения высокого уровня кажется, что они выполняются одновременно.</q>
+						</div>
+					</section>
+
+					<section>
+						<p>Синхронный код</p>
+						<pre>
+							<code data-trim data-line-numbers>
+								let counter = 1;
+
+								counter += 1;
+
+								console.log(counter); // 2
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<p>Асинхронный код</p>
+						<pre>
+							<code data-trim data-line-numbers="0|1-3,5-7|4">
+								console.log(1);
+
+								setTimeout(() => {
+									console.log(3),
+								}, 1000);
+
+								console.log(2);
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<p>Иллюстрация концепции Event Loop</p>
+						<pre>
+							<code data-trim data-line-numbers>
+								// `eventLoop` - массив, который действует как очередь
+								// (первым пришел, первым ушел)
+
+								var eventLoop = [];
+
+								while (true) {
+									if (eventLoop.length > 0) {
+										const event = eventLoop.shift();
+
+										event();
+									}
+								}
+							</code>
+						</pre>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h6>Постановка проблемы</h6>
+					</section>
+
+					<section>
+						<pre>
+							<code data-trim data-line-numbers>
+								setTimeout(() => {
+									console.log('something'),
+								}, 1000);
+							</code>
+						</pre>
+						<pre class="fragment">
+							<code data-trim data-line-numbers>
+								setTimeout(function test() {
+									console.log('something'),
+								}, 1000);
+							</code>
+						</pre>
+					</section>
+					<section>
+						<p>callback - функция обратного вызова</p>
+					</section>
+					<section>
+						<h6>Примеры из жизни</h6>
+
+						<ul>
+							<li class="fragment">Чайник</li>
+							<li class="fragment">Микроволновая печь</li>
+						</ul>
+
+					</section>
+					<section>
+						<pre>
+							<code data-trim data-line-numbers>
+								const longTask = (callback) => {
+									const data = benchmark(); // долго выполняется
+
+									callback(data);
+								}
+
+								longTask((data) => {
+									console.log(data);
+								}));
+							</code>
+						</pre>
+					</section>
+					<section>
+						<pre>
+							<code class="fade-out" data-trim data-line-numbers>
+								const longTask1 = (callback) => {
+									const data = ...; // долго выполняется
+									callback(data);
+								};
+								const longTask2 = ...;
+								const longTask3 = ...;
+								const longTask4 = ...;
+								const longTask5 = ...;
+							</code>
+
+							<code class="fragment" data-trim data-line-numbers="1,11|2,10|3,9|4,8|5,7|6">
+								longTask1((data1) => {
+									longTask2((data2) => {
+										longTask3((data3) => {
+											longTask4((data4) => {
+												longTask5((data5) => {
+													console.log(data1, data2, data3, data4, data5)
+												});
+											});
+										});
+									});
+								});
+							</code>
+						</pre>
+					</section>
+					<section>
+						<p>Callback hell</p>
+
+						<pre class="fragment">
+							<code data-trim data-line-numbers="1,9|3,7|4,6|5">
+								fetch('list_of_urls', function(array_of_urls){
+									for(var i=0;  array_of_urls.length; i++) {
+										fetch(array_of_urls[i], function(profile){
+											fetch(profile.imageUrl, function(image){
+												...
+											});
+										});
+									}
+								});
+							</code>
+						</pre>
+					</section>
+
+					<section data-auto-animate>
+						<p>Обработка ошибок callback</p>
+
+						<pre class="fragment">
+							<code data-trim data-line-numbers="|7-9|2">
+								const longTask = (callback) => {
+									const data = benchmark(); // долго выполняется
+
+									callback(data);
+								}
+
+								longTask((data) => {
+									console.log(data);
+								}));
+							</code>
+						</pre>
+					</section>
+
+					<section data-auto-animate>
+						<p>Обработка ошибок callback</p>
+
+						<pre>
+							<code data-trim data-line-numbers="2,5,7|4|6|11-15">
+								const longTask = (callback) => {
+									try {
+										const data = benchmark(); // долго выполняется
+										callback(null, data);
+									} catch (error) {
+										callback(error);
+									}
+								}
+
+								longTask((error, data) => {
+									if (error) {
+										console.error(error);
+									} else {
+										console.log(data);
+									}
+								}));
+							</code>
+						</pre>
+					</section>
+					<section>
+						<p>Пример из документации по nodejs</p>
+
+						<pre>
+							<code data-trim data-line-numbers>
+								import { readFile } from 'node:fs';
+
+								readFile('/etc/passwd', (err, data) => {
+									if (err) throw err;
+									console.log(data);
+								});
+							</code>
+						</pre>
+					</section>
+
+					<section data-auto-animate>
+						<p>Решаем задачу</p>
+					</section>
+					<section data-auto-animate>
+						<p>Решаем задачу</p>
+						<p>Вычислить общее кол-во болеющих COVID-19 в странах: Россия, Китая и США за 1 ноября 2022</p>
+					</section>
+					<section>
+						<p>Решаем задачу</p>
+						<p><a href="https://covid-api.com/api/reports/total?date=2022-11-01&iso=RUS">https://covid-api.com/api/reports/total?date=2022-11-01&iso=RUS</a></p>
+						<pre>
+							<code data-trim data-line-numbers>
+								{
+									"data": {
+										"date": "2022-11-01",
+										"last_update": "2022-11-02 04:22:09",
+										"confirmed": 21129849,
+										"confirmed_diff": 5191,
+										"deaths": 382372,
+										"deaths_diff": 70,
+										"recovered": 0,
+										"recovered_diff": 0,
+										"active": 20747477,
+										"active_diff": 5121,
+										"fatality_rate": 0.0181
+									}
+								}
+							</code>
+						</pre>
+					</section>
+					<section data-auto-animate>
+						<p>Решаем задачу</p>
+						<pre>
+							<code data-trim data-line-numbers>
+								const getSickInCountry = (countryCode, cb) => {/* ... */}
+
+								getSickInCountry('RUS', (err, data1) => {
+									getSickInCountry('CHN', (err, data2) => {
+										getSickInCountry('USA', (err, data3) => {
+											console.log(
+												data1.data.confirmed_diff +
+												data2.data.confirmed_diff +
+												data3.data.confirmed_diff
+											)
+										})
+									})
+								})
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<p>Сколько времени выполняется наше решение?</p>
+					</section>
+					<section>
+						<p>Последовательные выполнение</p>
+						<img width="800" src="assets/sequential-requests.png"/>
+					</section>
+					<section>
+						<p>Хочется параллельно</p>
+						<img width="400" src="assets/parallel-requests.png"/>
+					</section>
+
+					<section>
+						<p>Исправим решение</p>
+						<pre>
+							<code data-trim data-line-numbers="1|3-13|4|6-12|15-17">
+								const result = [];
+
+								const callback = (err, data) => {
+									result.push(data);
+
+									if (result.length === 3) {
+										console.log(
+											result[0].data.confirmed_diff +
+											result[1].data.confirmed_diff +
+											result[2].data.confirmed_diff
+										)
+									}
+								}
+
+								getSickInCountry('RUS', callback);
+								getSickInCountry('CHN', callback);
+								getSickInCountry('USA', callback);
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						 <p>Итого</p>
+						<ul>
+							<li class="fragment">Нелинейный код</li>
+							<li class="fragment">Callback hell</li>
+							<li class="fragment">Необработанные исключения</li>
+						</ul>
+					</section>
+
+				</section>
+
+				<section>
+					<section data-auto-animate>
+						<h3>Помечтаем</h3>
+					</section>
+					<section data-auto-animate>
+						<h3>Помечтаем</h3>
+						<p>Как выглядит функция сейчас</p>
+						<pre>
+							<code data-trim data-line-numbers>
+								getSickInCountry('RUS', (err, data) => {
+									if (error) {
+										console.error(error);
+									} else {
+										console.log(data);
+									}
+								});
+							</code>
+						</pre>
+					</section>
+					<section data-auto-animate>
+						<h3>Помечтаем</h3>
+						<p>Как выглядит функция сейчас</p>
+						<pre>
+							<code data-trim data-line-numbers>
+								getSickInCountry('RUS', (err, data) => {
+									if (error) {
+										console.error(error);
+									} else {
+										console.log(data);
+									}
+								});
+							</code>
+						</pre>
+
+						<p>Как хочется, чтобы она выглядела</p>
+						<pre>
+							<code data-trim data-line-numbers>
+								getSickInCountry('RUS')
+									.then((data) => console.log(data))
+									.catch((error) => console.log(error));
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<h3>Помечтаем о параллельности</h3>
+						<pre class="fragment">
+							<code data-trim data-line-numbers="1-5|6-12|13">
+								waitAll([
+									getSickInCountry('RUS'),
+									getSickInCountry('CHN'),
+									getSickInCountry('USA')
+								])
+									.then(([data1, data2, data3]) => {
+										console.log(
+											data1.data.confirmed_diff +
+											data2.data.confirmed_diff +
+											data3.data.confirmed_diff
+										)
+									})
+									.catch(error => console.error(error))
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<h3>Promises</h3>
+					</section>
+
+				</section>
 			</div>
 		</div>
 
@@ -31,6 +426,7 @@
 			// - https://revealjs.com/config/
 			Reveal.initialize({
 				hash: true,
+				slideNumber: true,
 
 				// Learn about plugins: https://revealjs.com/plugins/
 				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
