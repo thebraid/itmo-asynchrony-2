@@ -4,7 +4,7 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-		<title>reveal.js</title>
+		<title>asynchrony-2</title>
 
 		<link rel="stylesheet" href="dist/reset.css">
 		<link rel="stylesheet" href="dist/reveal.css">
@@ -823,7 +823,7 @@
 
 				<section>
 					<section data-auto-animate>
-						<h3>Microtasks queue (Job queue)</h3>
+						<h3>Microtask queue</h3>
 					</section>
 
 					<section data-auto-animate>
@@ -848,8 +848,58 @@
 						</pre>
 					</section>
 
-					<section>
+					<section data-auto-animate>
+						<p>Вспоминаем</p>
+						<p class="fragment">Task queue (Event queue, Callback queue, Macrotask queue)</p>
+					</section>
+					<section data-auto-animate>
+						<p>Task queue (Event queue, Callback queue, Macrotask queue)</p>
+						<p>Microtask queue (Job queue)</p>
+					</section>
+					<section data-auto-animate>
+						<p>Microtask queue (Job queue)</p>
+						<p>Смысл: выполнить код позже (асинхронно), но как можно скорее</p>
+					</section>
+					<section data-auto-animate>
+						<p>Microtask queue (Job queue)</p>
+						<p>Смысл: выполнить код позже (асинхронно), но как можно скорее</p>
+						<p>Выполняются сразу после завершения task, с которой они привязаны</p>
+					</section>
+					<section data-auto-animate>
+						<p>Main Thread</p>
 						<img width="800" src="assets/event-loop.png" />
+					</section>
+
+					<section>
+						<h3>Приоритет очередей в Event Loop</h3>
+
+						<ul>
+							<li class="fragment">Render Queue - отслеживает все изменения DOM модели</li>
+							<li class="fragment">Task Queue</li>
+							<li class="fragment">После каждой выполненной Таски выполняются связанные с ней Microtasks</li>
+						</ul>
+					</section>
+
+					<section>
+						<pre>
+							<code data-trim data-line-numbers="0|1,15|9,12|4">
+								console.log('script start');
+
+								setTimeout(() => {
+								  console.log('setTimeout');
+								}, 0);
+
+								Promise.resolve()
+									.then(() => {
+										console.log('promise1');
+									})
+									.then(function() {
+										console.log('promise2');
+									});
+
+								console.log('script end');
+							</code>
+						</pre>
 					</section>
 				</section>
 
@@ -857,7 +907,7 @@
 					<section>
 						<h3>Итого</h3>
 						<ul>
-							<li class="fragment">Пратически линейный код</li>
+							<li class="fragment">Практически линейный код</li>
 							<li class="fragment">Отсутствует callback hell</li>
 							<li class="fragment">Обработаны исключения</li>
 						</ul>
@@ -866,8 +916,155 @@
 
 				<section>
 					<section>
+						<h3>Как быть, если хочется писать синхронный код для асинхронных задач?</h3>
+					</section>
+					<section>
 						<h3>async await</h3>
 					</section>
+
+					<section>
+						<p>Рассмотрим пример</p>
+
+						<pre>
+							<code data-trim data-line-numbers="0|2,7">
+								getSickInCountry('RUS')
+									.then(data => {
+										console.log('3');
+										return data;
+									})
+
+								console.log(data); // ошибка
+							</code>
+						</pre>
+
+						<pre class="fragment">
+							<code data-trim data-line-numbers="6-8">
+								getSickInCountry('RUS')
+									.then(data => {
+										console.log('3');
+										return data;
+									})
+									.then(data => {
+										console.log(data);
+									})
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<p>Исправляем ошибки</p>
+
+						<pre>
+							<code data-trim data-line-numbers>
+								const response = getSickInCountry('RUS');
+
+								console.log(response); // Promise{pending}
+							</code>
+						</pre>
+
+						<pre class="fragment">
+							<code data-trim data-line-numbers="1">
+								const response = await getSickInCountry('RUS');
+
+								console.log(response);
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<p>await указывает на то, что нужно дождаться выполнение Promise</p>
+					</section>
+
+					<section>
+						<p>Если Promise выполнился успешно - вернется результат, иначе возникнет исключение</p>
+					</section>
+
+					<section>
+						<p>В примере выше есть проблема</p>
+						<br>
+						<q class="fragment">Uncaught SyntaxError: await is only valid in async function</q>
+						<br>
+						<br>
+						<p class="fragment">синтаксис await можно использовать только в асинхронной функции</p>
+					</section>
+
+					<section>
+						<p>Исправляем ошибку</p>
+
+						<pre class="fragment">
+							<code data-trim data-line-numbers="0|1-2">
+								const main = async () => {
+									const response = await getSickInCountry('RUS');
+
+									console.log(response);
+								}
+
+								main();
+							</code>
+						</pre>
+
+						<pre class="fragment">
+							<code data-trim data-line-numbers>
+								// IIFE - immediately-invoked function expressions
+								(async () => {
+									const response = await getSickInCountry('RUS');
+
+									console.log(response);
+								})()
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<p>async функция всегда возвращает promise</p>
+					</section>
+					<section>
+						<pre>
+							<code data-trim data-line-numbers="1-3|5|7">
+								const func = async () => {
+									return 1;
+								}
+
+								console.log(func()); // Promise{fulfilled: 1}
+
+								func().then(result => console.log(result)); // 1
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<p>Переписываем нашу задачу на async/await</p>
+
+						<pre class="fragment">
+							<code data-trim data-line-numbers="2-6|8-12">
+								const main = async () => {
+									const response = await Promise.all([
+										getSickInCountry('RUS'),
+										getSickInCountry('CHN'),
+										getSickInCountry('USA'),
+									])
+
+									console.log(
+										response[0].data.confirmed_diff +
+										response[1].data.confirmed_diff +
+										response[2].data.confirmed_diff
+									);
+								}
+
+								main();
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<h3>Итого</h3>
+						<ul class="fragment">
+							<li>Линейный код</li>
+							<li>Отсутствует callback hell</li>
+							<li>Обработаны исключения</li>
+						</ul>
+					</section>
+
 				</section>
 
 				<section>
@@ -879,9 +1076,40 @@
 
 					<section>
 						<h3>Производительность</h3>
+						<p>Выполнение последовательных promises</p>
 
-						<img width="800" src="assets/can-i-use_promises.png" />
+						<img width="800" src="assets/seq-promises.png" />
 					</section>
+
+					<section>
+						<h3>Производительность</h3>
+						<p>Выполнение параллельных promises</p>
+
+						<img width="800" src="assets/par-promises.png" />
+					</section>
+
+					<section>
+						<p>Bluebird</p>
+						<q cite="https://github.com/petkaantonov/bluebird">Bluebird is a fully featured promise library with focus on innovative features and performance</q>
+
+						<img class="fragment" width="800" src="assets/bundlefobia_bluebird.png" />
+					</section>
+				</section>
+
+				<section>
+					<h3>Почитать</h3>
+					<ul>
+						<li><a href="https://learn.javascript.ru/async">Промисы, async/await</a></li>
+						<li><a href="https://github.com/azat-io/you-dont-know-js-ru/blob/master/async%20%26%20performance/README.md#you-dont-know-js-async--performance">Вы не знаете JS: Асинхронность и Производительность</a></li>
+						<li><a href="https://habr.com/ru/post/264993/">Задачи, микрозадачи, очереди и планы</a></li>
+					</ul>
+				</section>
+
+				<section>
+					<h2>Рубрика вопросов</h2>
+					<br/>
+					<p style="margin:0">Ссылка на презентацию</p>
+					<img width="500" style="margin:0" src="assets/qr.svg" />
 				</section>
 			</div>
 		</div>
