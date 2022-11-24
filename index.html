@@ -78,7 +78,7 @@
 					<section>
 						<p>Асинхронный код</p>
 						<pre>
-							<code data-trim data-line-numbers="0|1-3,5-7|4">
+							<code data-trim data-line-numbers="1-3,5-7|4">
 								console.log(1);
 
 								setTimeout(() => {
@@ -118,13 +118,6 @@
 					<section>
 						<pre>
 							<code data-trim data-line-numbers>
-								setTimeout(() => {
-									console.log('something'),
-								}, 1000);
-							</code>
-						</pre>
-						<pre class="fragment">
-							<code data-trim data-line-numbers>
 								setTimeout(function test() {
 									console.log('something'),
 								}, 1000);
@@ -163,7 +156,7 @@
 						<pre>
 							<code class="fade-out" data-trim data-line-numbers>
 								const longTask1 = (callback) => {
-									const data = ...; // долго выполняется
+									const data = getData(); // долго выполняется
 									callback(data);
 								};
 								const longTask2 = ...;
@@ -203,13 +196,15 @@
 								});
 							</code>
 						</pre>
+
+						<p class="fragment">Запомним эту проблему, вернемся к ней позже</p>
 					</section>
 
 					<section data-auto-animate>
 						<p>Обработка ошибок callback</p>
 
 						<pre class="fragment">
-							<code data-trim data-line-numbers="0|7-9|2">
+							<code data-trim data-line-numbers="7-9|2">
 								const longTask = (callback) => {
 									const data = benchmark(); // долго выполняется
 
@@ -227,7 +222,7 @@
 						<p>Обработка ошибок callback</p>
 
 						<pre>
-							<code data-trim data-line-numbers="0|2-7|3,4|6|11-15">
+							<code data-trim data-line-numbers="2-7|3,4|6|11-15">
 								const longTask = (callback) => {
 									try {
 										const data = benchmark(); // долго выполняется
@@ -514,8 +509,8 @@
 								});
 
 								promise.then(
-								  result => alert(result), // выведет "ready" через 1 cек
-								  error => alert(error) // не будет запущена
+								  result => console.log(result), // выведет "ready" через 1 cек
+								  error => console.log(error) // не будет запущена
 								);
 							</code>
 						</pre>
@@ -531,8 +526,8 @@
 								});
 
 								promise.then(
-								  result => alert(result), // не будет запущена
-								  error => alert(error) // выведет "Error: oops"
+								  result => console.log(result), // не будет запущена
+								  error => console.log(error) // выведет "Error: oops"
 								);
 							</code>
 						</pre>
@@ -548,9 +543,9 @@
 								});
 
 
-								promise.then(null, error => alert(error));
+								promise.then(null, error => console.log(error));
 								// ===
-								promise.catch(error => alert(error));
+								promise.catch(error => console.log(error));
 							</code>
 						</pre>
 					</section>
@@ -593,19 +588,32 @@
 						</pre>
 					</section>
 
+					<section>
+						<h3>Поддержка браузерами</h3>
+
+						<img width="800" src="assets/can-i-use_promises.png" />
+					</section>
+
+
 					<section data-auto-animate>
 						<h3>Промисификация</h3>
 					</section>
 					<section data-auto-animate>
 						<h3>Промисификация</h3>
 						<p>Это преобразовании функции, которая принимает callback, в функцию, возвращающую promise</p>
+						<br/>
+						<p class="fragment">Для чего это нужно?</p>
+						<ul class="fragment">
+							<li>удобство</li>
+							<li>единый стиль кода</li>
+						</ul>
 					</section>
 					<section data-auto-animate>
 						<h3>Промисификация</h3>
 						<pre>
-							<code data-trim data-line-numbers="0|1-5|7-9" data-id="test">
+							<code data-trim data-line-numbers="1-5|7-9" data-id="test">
 								const loadData = (callback) => {
-									const response = ... // загружаем данные;
+									const response = getData() // загружаем данные;
 
 									callback(response);
 								};
@@ -622,7 +630,7 @@
 							<code data-trim data-line-numbers="0|2-6|9-10">
 								const loadData = () => {
 									return new Promise(resolve => {
-										const response = ... // загружаем данные;
+										const response = getData() // загружаем данные;
 
 										resolve(response);
 									})
@@ -670,7 +678,7 @@
 					<section data-auto-animate>
 						<p>Универсальная функция промисификации</p>
 						<pre>
-							<code data-trim data-line-numbers="1,3|5|6-7">
+							<code data-trim data-line-numbers="3|5|6-7">
 								import { readFile } from 'node:fs';
 
 								const readFilePromisified = promisify(readFile);
@@ -1072,6 +1080,35 @@
 						<h3>Необработанные ошибки</h3>
 					</section>
 					<section>
+						<p>Прежде чем идти дальше, узнаем про addEventListener</p>
+
+						<pre class="fragment">
+							<code data-trim data-line-numbers>
+								window.addEventListener('click', callback);
+							</code>
+						</pre>
+
+						<pre class="fragment">
+							<code data-trim data-line-numbers>
+								{
+									'click': [callback],
+								}
+							</code>
+						</pre>
+
+						<pre class="fragment">
+							<code data-trim data-line-numbers>
+								window.addEventListener('click', () => {
+									console.log('CLICK')
+								});
+							</code>
+						</pre>
+
+						<p class="fragment">Для понимания работы addEventListener стоит ознакомиться с темой "EventEmitter"</p>
+					</section>
+					<section>
+						<h3>Необработанные ошибки</h3>
+						<br/>
 						<p>Как JavaScript понимает, что ошибка не обработана?</p>
 						<br/>
 						<p class="fragment">"Необработанная ошибка" возникает, если ошибка промиса не обрабатывается в конце очереди микрозадач</p>
@@ -1083,6 +1120,20 @@
 								promise.catch(err => console.log('поймали ошибку'));
 
 								// не запустится, ошибка обработана
+								window.addEventListener('unhandledrejection', event => {
+								  console.log(event.reason);
+								});
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<pre>
+							<code data-trim data-line-numbers>
+								const promise = Promise.reject(new Error("oops"));
+								// 	promise.catch(err => console.log('поймали ошибку'));
+
+								// запустится, ошибка не обработана
 								window.addEventListener('unhandledrejection', event => {
 								  console.log(event.reason);
 								});
@@ -1563,12 +1614,6 @@
 
 				<section>
 					<section>
-						<h3>Поддержка браузерами</h3>
-
-						<img width="800" src="assets/can-i-use_promises.png" />
-					</section>
-
-					<section>
 						<h3>Производительность</h3>
 						<p>Выполнение последовательных promises</p>
 
@@ -1591,11 +1636,14 @@
 				</section>
 
 				<section>
-					<h3>Почитать</h3>
+					<h3>Полезные материалы</h3>
 					<ul>
 						<li><a href="https://learn.javascript.ru/async">Промисы, async/await</a></li>
 						<li><a href="https://github.com/azat-io/you-dont-know-js-ru/blob/master/async%20%26%20performance/README.md#you-dont-know-js-async--performance">Вы не знаете JS: Асинхронность и Производительность</a></li>
 						<li><a href="https://habr.com/ru/post/264993/">Задачи, микрозадачи, очереди и планы</a></li>
+						<br/>
+						<li><a href="https://caniuse.com">https://caniuse.com</a> (узнать, какой браузер поддерживает нужный функционал)</li>
+						<li><a href="https://bundlephobia.com">https://bundlephobia.com</a> (узнать размер интересующей библиотеки)</li>
 					</ul>
 				</section>
 
